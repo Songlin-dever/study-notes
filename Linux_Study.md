@@ -262,7 +262,7 @@ crontab [选项]
 
 设置定时任务，先执行crontab -e进入编辑
 
-*/1**** ls -l /etc/ > /tmp/to.txt  （/1表示每一分钟）
+\*/1\**** ls -l /etc/ > /tmp/to.txt  （/1表示每一分钟）
 
 ​	第一个* 一小时当中的第几分钟 0~59
 
@@ -533,3 +533,299 @@ yum是一个Shell前段软件包管理器，基于RPM包管理，能够从指定
 yum list | grep XXX 查询yum服务器是否有需要安装的软件
 
 yum install XXX 下载安装
+
+安装JDK8 
+
+Linux下进行java EE开发，需要安装idea，apache-tomcat，mysql，jdk8
+
+### 安装jdk8
+
+1. mkdir /opt/jdk
+2. 通过xftp6 上传到 /opt/jdk下
+3. cd /opt/jdk
+4. 解压 tar -zxvf jdk-8u261-linux-x64.tar.gz
+5. mkdir /usr/local/java
+6. mv /opt/jdk/jdk1.8.0_261 /usr/local/java
+7. 配置环境变量的配置文件 vim /etc/profile
+8. export JAVA_HOME=/usr/local/java/jdk1.8.0_261
+9. export PATH=$JAVA_HOME/bin:$PATH
+10. source /etc/profile [让文件生效]
+11. 测试是否安装成功 编写一个简单的Hello.java 输出"Hello World !"
+
+### 安装tomcat
+
+1. 上传安装文件，并解压到/opt/tomcat
+
+2. 进入解压目录/bin ,启动tomcat ./startup.sh
+
+3. 开放端口 8080
+
+4. 测试是否安装成功 在Windows、Linux下访问 http://linuxip:8080 (如http://192.168.200.130:8080)
+
+5. tomcat下的webapps目录用来存放应用程序，tomcat启动时会去加载webapps下的应用程序，可以以文件夹，war包，jar包的形式发布应用，这时访问项目的方式为 ip.端口号/项目名称 ，也可以把应用程序放在磁盘的任意位置，在配置文件中进行映射
+
+6. webapps下的ROOT目录 ：可以把项目war包解压开放入ROOT目录，同样可以运行项目，但是放在ROOT目录下后访问项目方式变为 ip:端口号
+
+7. 总结：webapps访问项目需要加项目名，而ROOT访问项目不需要  webapps不需要解压而ROOT需要解压才能放入 
+
+   
+
+### 安装idea2020
+
+1. 下载地址 https://www.jetbrains.com/idea/download/#section=linux
+2. 解压到 /opt/idea
+3. 启动idea bin目录下 ./idea.sh,可以启动IDEA, 配置jdk  (需要再有界面的环境下执行，运行级别5)
+4. 编写Hello World程序并测试
+
+### 安装mysql5.7 (5.7比较稳定)
+
+1. mkdir /opt/mysql 
+2. 进入 /opt/mysql 运行 wget http://dev.mysql.com/get/mysql-5.7.26-1.el7.x86_64.rpm-bundle.tar
+3. 运行 tar -xvf mysql.5.7.26 (有 .tar 不需要 "z")
+4. CentOS7.6会自带自带mysql数据库mariadb 会与mysql冲突，需要删除 
+5. 运行`rpm -qa | grep maria` , 运行rpm -e --nodeps mariadb-libs,卸载 (把maria有关的全删完)
+6. 下面按照顺序执行
+   - rpm -ivh mysql-community-common……
+   - rpm -ivh mysql-community-libs……
+   - rpm -ivh mysql-community-client……
+   - rpm -ivh mysql-community-server……
+7. 运行 systemctl start mysqld.service，启动mysql
+8. 设置root用户密码
+   - mysql自动给root用户设置随机密码，运行 grep "password" /var/log/mysqld.log 可看到当前密码
+   - (启动mysql后)运行 mysql -u root -p 再输入密码
+   - `set global validate_password_policy=0`; 提示密码设置策略 (0最低 数字越大要求越高)
+   - `set password for 'root'@'localhost'=password('lwh021002')`；
+   - 运行 `flush privileges` 使密码设置生效
+
+## Shell编程
+
+shell是一个命令行解释器， 它为用户提供了一个向Linux内核发送请求以便运行程序的界面系统级程序，用户可以用shell来启动、挂起、停止甚至编写一些程序
+
+​			外层应用程序 -> shell命令解释器 -> 内核 -> 硬件
+
+​			比如输入 `mkdir /opt/t` 该指令会发给命令解释器，命令解释器执行，执行完返回数据，也可以写shell脚本，如XXX.sh
+
+**脚本格式要求**
+
+- 脚本以#!/bin/bash开头
+- 脚本需要有可执行权限
+
+**脚本执行方式**
+
+- 输入脚本的绝对路径或相对路径 (要赋予脚本 +x 权限 `chmod u+x XXX.sh`) 再执行脚本 
+
+- sh + 脚本 (不用赋予 +x 权限，直接执行即可)
+
+- ```shell
+  #!/bin/bash
+  echo "Hello World!"
+  ```
+
+**shell变量**
+
+- Linux中的Shell变量分为 系统变量和用户自定义变量
+
+- 系统变量 ：$HOME、$PWD、$SHELL、$USER 等等 比如 echo $HOME
+
+- 显示当前Shell中所有变量 ：set
+
+- 定义变量 ：变量名=值 (不能加空格！！！)
+
+- 撤销变量 ：unset 变量
+
+- 声明静态变量 ：readonly变量，不能unset
+
+- ```shell
+  #!/bin/bash
+  A=100
+  #输出变量加 $
+  echo $A
+  #撤销变量A
+  unset A
+  #声明静态变量B=2，不能unset
+  readonly B=2
+  ```
+
+- 规则:
+
+  - 变量名可以由字母 数字 下划线 组成，不能以数字开头
+  - 等号两侧不能有空格
+  - 变量名称一般习惯为大写
+
+- 将命令的返回值赋给变量
+
+  - A=\`date\` 反引号
+  - A=$(date) 等价于反引号
+
+**设置环境变量**
+
+- export 变量名=变量值 (将Shell变量输出为环境变量/局部变量)
+- source 配置文件 (让修改后的配置信息立即生效)
+- echo $变量名 (查询环境变量的值)
+
+**位置参数变量**
+
+执行Shell脚本时，如果希望获得命令行的参数信息，可以使用位置参数变量
+
+- $n n为数字 $0 代表命令本身，$1~$9代表第一到第九个参数，10以上的参数用大括号，如  ${10}
+- $* 表示命令行中的所有参数，$* 把所有参数看成一个整体
+- $@ 代表所有参数，不过区分对待
+- $# 代表命令行中所有参数的个数
+
+**预定义变量** (很少用)
+
+shell设计者事先定义好的变量，可以直接在shell脚本中使用 
+
+- $$ 当前进程的进程号 PID
+- $! 后台运行的最后一个进程的进程号
+- $? 最后一次执行命令的返回状态，如果为0，则上一个命令正确执行，若非0，则上一个命令执行不正确
+
+**运算符**
+
+- "$((运算式))" 或 "$[运算式]" 或 expr m + n
+- expr 运算符之间有空格，把运算结果赋值给某个变量使用 ``
+- expr \\* / % 乘 除 取余
+
+**条件判断**
+
+[ condition ]  condition前后要有空格 非空返回true，可用$?验证 0为true，>1为false
+
+​	[ condition ] && echo "a" || echo "b"  如果condition为true，执行后面代码
+
+- [ hspedu ]  返回true
+
+- [] 返回false
+
+- [ condition ] && echo OK || echo notok
+
+- = 字符串比较 
+
+- 两个整数比较
+
+  - -lt 小于
+  - -le 小于等于 little equal
+  - -eq 等于
+  - -gt 大于
+  - -ge 大于等于
+  - -ne 不等于
+
+- 按照文件权限判断
+
+  - -r 有读的权限 
+  - -w 有写的权限
+  - -x 有执行的权限
+
+- 按照文件类型判断
+
+  - -f 文件存在并且是一个常规的文件
+  - -e 文件存在
+  - -d 文件存在并且是一个目录
+
+- ```shell
+  #!/bin/bash
+  if [ "yes"="no" ]
+  then 
+  	echo "equal"
+  fi 
+  ```
+
+**流程控制**
+
+- ```shell
+  #!/bin/bash
+  if [ 2 -le 3 ]
+  then 
+  	echo "el"
+  elif [ 2 -g 3 ]
+  then 
+  	echo "g"
+  fi
+  ```
+
+- ```shell
+  #!/bin/bash
+  case 变量 in 
+  "1")
+  	echo "is 1";;
+  "2")
+  	echo "is 2";;
+  "3")
+  	echo "is 3";;
+  *)
+  	echo "not found"
+  esac
+  ```
+
+**for循环**
+
+- ```shell
+  #!/bin/bash
+  for 变量 in 值1 值2 值3
+  do
+  程序/代码
+  done
+  ```
+
+- ```shell
+  #!/bin/bash
+  SUM=0
+  for ((i=1 ; i<=100 ; i++))
+  do
+  	$SUM=$[$SUM+$i]
+  done
+  echo $SUM
+  ```
+
+**while循环**
+
+- ```shell
+  #!/bin/bash
+  while [ 条件判断 ]
+  do
+  程序
+  done
+  ```
+
+**read读取控制台输入**
+
+read [选项] [参数]
+
+- -p 指定读取值时的提示符
+
+- -t 指定读取值时等待的时间(秒),如果没有在指定的时间输入就不再等待
+
+- ```shell
+  #!/bin/bash
+  #下面代码，如果没有输入就一直阻塞
+  read -p "请输入一个NUM" NUM
+  echo $NUM
+  read -t 10 -p "请输入一个NUM2" NUM2
+  echo $NUM2
+  ```
+
+**函数**
+
+系统函数
+
+- basename [pathname] [suffix] 返回完整路径 / 的部分，常用于获取文件名
+- `basename /home/test/test/hello.txt .txt` 返回 `hello`
+
+- dirname [文件绝对路径] 返回最后 / 的前面部分
+- `dir /home/test/test.txt` 返回 `/home/test`
+
+自定义函数
+
+- ```shell
+  #!/bin/bash
+  function getSum() {
+  	SUM=$[$n1+$n2]
+  	echo $SUM
+  }
+  read -p "请输入两个数" n1 n2
+  getSum $n1 $n2
+  ```
+
+## 备份与恢复
+
+- 把需要的文件或者分区用tar打包，下次需要恢复的时候，再解压开覆盖即可
+- 使用`dump`和`restore`命令 (可能没有安装 yum -y install dump , yum -y install restore)
