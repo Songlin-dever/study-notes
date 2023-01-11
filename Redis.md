@@ -2,57 +2,57 @@
 
 ## 数据结构
 
-- ### String（字符串）
+### String（字符串）
 
-  - 使用场景
-    - 直接缓存整个对象的 JSON，命令例子： `SET user:1 '{"name":"xiaolin", "age":18}'`
-    - 采用将 key 进行分离为 user:ID:属性，采用 MSET 存储，用 MGET 获取各属性值，命令例子： `MSET user:1:name xiaolin user:1:age 18 user:2:name xiaomei user:2:age 20`
+- 使用场景
+  - 直接缓存整个对象的 JSON，命令例子： `SET user:1 '{"name":"xiaolin", "age":18}'`
+  - 采用将 key 进行分离为 user:ID:属性，采用 MSET 存储，用 MGET 获取各属性值，命令例子： `MSET user:1:name xiaolin user:1:age 18 user:2:name xiaomei user:2:age 20`
 
-- ### Hash（哈希）
+### Hash（哈希）
 
-  - 使用场景
-    - 存储对象，Hash 类型的 （key，field， value） 的结构与对象的（对象id， 属性， 值）的结构相似，也可以用来存储对象
-    - 购物车，以用户 id 为 key，商品 id 为 field，商品数量为 value，恰好构成了购物车的3个要素
+- 使用场景
+  - 存储对象，Hash 类型的 （key，field， value） 的结构与对象的（对象id， 属性， 值）的结构相似，也可以用来存储对象
+  - 购物车，以用户 id 为 key，商品 id 为 field，商品数量为 value，恰好构成了购物车的3个要素
 
-- ### List（列表）
+### List（列表）
 
-  - 使用场景
-    - 消息队列， LPUSH + RPOP
+- 使用场景
+  - 消息队列， LPUSH + RPOP
 
-- ### Set（集合）
+### Set（集合）
 
-  - 使用场景
-    - 点赞，Set 类型可以保证一个用户只能点一个赞，这里举例子一个场景，key 是文章id，value 是用户id
-    - 共同关注，Set 类型支持交集运算，所以可以用来计算共同关注的好友、公众号等，key 可以是用户id，value 则是已关注的公众号的id。
-    - 抽奖活动，key为抽奖活动名，value为员工名称，如果允许重复中奖，可以使用 SRANDMEMBER 命令，如果不允许重复中奖，可以使用 SPOP 命令
+- 使用场景
+  - 点赞，Set 类型可以保证一个用户只能点一个赞，这里举例子一个场景，key 是文章id，value 是用户id
+  - 共同关注，Set 类型支持交集运算，所以可以用来计算共同关注的好友、公众号等，key 可以是用户id，value 则是已关注的公众号的id。
+  - 抽奖活动，key为抽奖活动名，value为员工名称，如果允许重复中奖，可以使用 SRANDMEMBER 命令，如果不允许重复中奖，可以使用 SPOP 命令
 
-- ### ZSet（有序集合）
+### ZSet（有序集合）
 
-  - 使用场景
-    - 排行榜
-    - 电话和姓名排序，使用有序集合的 `ZRANGEBYLEX` 或 `ZREVRANGEBYLEX` 可以帮助我们实现电话号码或姓名的排序
+- 使用场景
+  - 排行榜
+  - 电话和姓名排序，使用有序集合的 `ZRANGEBYLEX` 或 `ZREVRANGEBYLEX` 可以帮助我们实现电话号码或姓名的排序
 
-- ### BitMap
+### BitMap
 
-  - 使用场景
-    - 签到统计
-    - 判断用户登录态
-    - 连续签到用户总数
+使用场景
+- 签到统计
+- 判断用户登录态
+- 连续签到用户总数
 
-- ### HyperLogLog
+### HyperLogLog
 
-  - 使用场景
-    - 百万级网页UV计数
+- 使用场景
+  - 百万级网页UV计数
 
-- ### GEO
+### GEO
 
-  - 使用场景
-    - 滴滴叫车
+- 使用场景
+  - 滴滴叫车
 
-- ### Stream
+### Stream
 
-  - 使用场景
-    - 消息队列
+- 使用场景
+  - 消息队列
 
 ## 过期删除策略
 
@@ -137,4 +137,148 @@
   - 不给热点数据设置过期时间，由后台异步更新缓存，或者在热点数据准备要过期前，提前通知后台线程更新缓存以及重新设置过期时间
 
 ### 缓存穿透
+
+- 用户访问的数据既不在缓存中，也不在数据库中，当这样的请求很多时，数据库压力骤增，即缓存穿透
+
+- 缓存穿透发生的两种情况：
+
+  - 业务误操作，缓存中的数据和数据库中的数据都被误删除了，所以导致缓存和数据库中都没有数据
+  - 黑客恶意攻击，故意大量访问某些读取不存在数据的业务
+
+- 应对方案：
+
+  - 非法请求的限制
+
+    - 在API入口处判断请求参数是否合理，是否含有非法值，请求字段是否存在，如果判断出是恶意请求就直接返回错误
+
+  - 缓存空值或者默认值
+
+    - 线上业务发现缓存穿透时，可以针对查询的数据在缓存中设置空值或默认值
+
+  - 使用布隆过滤器快速判断数据是否存在，避免通过查询数据库来判断数据是否存在
+
+    - 写入数据库时，用布隆过滤器做个标记，然后在请求到来时，业务线程确认缓存失效后，可以通过布隆过滤器来快速判断数据是否存在，如果不存在，就不用查询数据库
+
+    - 布隆过滤器会通过 3 个操作完成标记：
+      1. 使用 N 个哈希函数分别对数据做哈希计算，得到 N 个哈希值
+      2. 将第一步得到的 N 个哈希值对位图数组的长度取模，得到每个哈希值在位图数组的对应位置。
+      3. 将每个哈希值在位图数组的对应位置的值设置为 1
+
+### 缓存一致
+
+#### 问题描述
+
+**由于引入了缓存，那么在数据更新时，不仅要更新数据库，而且要更新缓存，这两个更新操作存在前后的问题**：
+
+- 先更新数据库，再更新缓存，问题：
+  - 请求`A`把数据库更新为`1`，请求`B`把数据库更新为`2`，请求`B`把缓存更新为`2`，请求`A`把缓存更新为`1`；
+- 先更新缓存，再更新数据库，问题：
+  - 请求`A`把缓存更新为`1`，请求`B`把缓存更新为`2`，请求`B`把数据库更新为`2`，请求`A`把数据库更新为`1`；
+
+#### 解决方案
+
+- **先更新数据库，再删除缓存**，说明：因为缓存的写入通常远远快于数据库的写入，考虑这样一种情况：请求A缓存未命中，读取数据库20，请求B更新数据库为21，删除缓存，请求A将20写回缓存，此时数据库和缓存不一致。但是现实中一般请求A会在请求B删除缓存之前写回缓存
+
+  （最好给缓存数据加上过期时间，这样如果删除缓存失败，那么旧数据过期后会重新读取数据库中的新数据）
+
+- 假如删除缓存失败，有两种方法
+
+  - **重试机制**，引入消息队列，把删除缓存要操作的数据放入消息队列中
+    - 如果删除失败，重新读取数据继续删除，达到一定次数，向业务层发送报错信息
+    - 如果成功，就把数据从消息队列中移除
+  - **订阅 `MySQL binlog`，再操作缓存**
+    - 更新数据库成功会产生一条变更日志记录在`binlog`里，通过订阅`binlog`日志拿到要操作的数据，然后再执行缓存删除
+    - `Canal`模拟 MySQL 主从复制的交互协议，把自己伪装成一个 MySQL 的从节点，向 MySQL 主节点发送 dump 请求，MySQL 收到请求后，就会开始推送 `Binlog` 给 `Canal`，`Canal` 解析 `Binlog` 字节流之后，转换为便于读取的结构化数据，供下游程序订阅使用。
+
+# Redis客户端
+
+Spring-Data-Redis底层兼容`jedis`和`lettuce`
+
+
+
+## Jedis
+
+- 轻量，简洁，便于集成和改造
+  - 以Redis命令作为方法名称，学习成本低，简单实用，Jedis实例是线程不安全的，多线程环境下需要基于连接池来使用
+- 支持连接池
+- 支持pipelining、事务、LUA Scripting、Redis Sentinel、Redis Cluster
+- 不支持读写分离，需要自己实现
+- 文档差（真的很差，几乎没有……）
+
+## Redisson
+
+- 基于Netty实现，采用非阻塞IO，性能高
+- 基于redis实现了分布式的、可伸缩的Java数据结构及合，如Map、Queue、Lock、Semaphore、AtomicLong等强大功能
+- 支持异步请求
+- 支持连接池
+- 支持pipelining、LUA Scripting、Redis Sentinel、Redis Cluster
+- 不支持事务，官方建议以LUA Scripting代替事务
+- 支持读写分离，支持读负载均衡，在主从复制和Redis Cluster架构下都可以使用
+- 文档较丰富，有中文文档
+
+## Lettuce
+
+- 基于Netty实现，支持同步、异步和响应式编程方式，并且是线程安全的，支持redis的哨兵模式、集群模式和管道模式
+
+# SpringDataRedis
+
+## 介绍
+
+- 提供了对不同redis客户端的整合，Lettuce（默认）和Jedis
+- 提供了RedisTemplate统一API操作redis
+- 支持redis的发布订阅模型
+- 支持redis哨兵的redis集群
+- 支持基于lettuce的响应式编程
+- 支持基于JDK,String，JSON，Spring对象的数据序列化和反序列化
+- 支持基于redis的JDKCollection实现
+
+## redisTemplate
+
+- `redisTemplate.opsForValue()`
+  - 返回`ValueOperations`
+  - 操作`String`类型数据
+- `redisTemplate.opsForHash()`
+  - 返回`HashOperations`
+  - 操作`Hash`类型数据
+- `redisTemplate.opsForList()`
+  - 返回`ListOperations`
+  - 操作`List`类型数据
+- `redisTemplate.opsForSet()`
+  - 返回`SetOperations`
+  - 操作`Set`类型数据
+- `redisTemplate.opsForZSet()`
+  - 返回`ZSetOperations`
+  - 操作`ZSet`类型数据
+
+## 序列化策略
+
+### String序列化策略
+
+### JDK序列化策略
+
+### 序列化方式
+
+- defaultSerializer      默认序列化策略
+- key                          普通key,非hash
+- value                       普通value,非hash
+- hashKey                  hash的filed
+- hashValue               hash的value
+- key和hashKey:   推荐使用   StringRedisSerializer: 简单的字符串序列化
+- hashValue:         推荐使用   GenericJackson2JsonRedisSerializer
+
+### 序列化类
+
+- `GenericToStringSerializer`: 可以将任何对象泛化为字符串并序列化
+
+- `Jackson2JsonRedisSerializer`: 跟JacksonJsonRedisSerializer实际上是一样的
+
+- `JacksonJsonRedisSerializer`: 序列化object对象为json字符串
+
+- `JdkSerializationRedisSerializer`: 序列化java对象（被序列化的对象必须实现Serializable接口）,无法转义成对象
+
+  可读性差，内存占用较大
+
+- `StringRedisSerializer`: 简单的字符串序列化
+- `GenericToStringSerializer`:类似StringRedisSerializer的字符串序列化
+- `GenericJackson2JsonRedisSerializer`:类似Jackson2JsonRedisSerializer，但使用时构造函数不用特定的类
 
