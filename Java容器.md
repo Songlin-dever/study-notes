@@ -69,23 +69,50 @@
     - #### Stack 
 
       - 线程安全，保留类，不建议使用
+      - 速度慢，因为继承自`Vector`，而`Vector`的每个方法都加了锁
       - 使用**数组**实现
 
 - ### Queue
 
+  - 提供了两套API：
+
+    - 抛出异常：`add()` `remove()` `element()`
+    - 返回特殊值：`offer()` `poll()` `peek()`
+  
   - #### LinkedList
-
+  
   - #### PriorityQueue
-
+  
   - #### Deque<interface>
-
+  
+    - 双端队列：只能在头部和尾部插入或者删除元素
+  
     - ##### LinkedList
-
+  
+      - 基于**双向链表**实现的双端队列，较慢
+      - 查询为`O(n)` ，如果`index < (size / 2)`，从`head`往后找，否则从`tail`往前找，插入删除为`O(1)`
+      - 非线程安全
+  
     - ##### ArrayDeque
-
+  
+      - 基于**循环数组**实现的双端队列，较快
+      - 插入或者删除元素 `O(1)` ，扩容时为`O(n)` ，`2倍`扩容，默认初始容量`16`，查询为`O(1)` 
+      - 非线程安全
+  
+    - ##### 总结：
+  
+      - 需要线程同步时，使用Collections工具类中synchronizedXxx()
+  
+      - 频繁的插入、删除操作：LinkedList
+  
+      - 频繁的随机访问操作：ArrayDeque
+  
+      - 未知的初始数据量：LinkedList
+  
     - ##### BlockingDeque<interface>
-
+  
   - #### BlockingQueue<interface>
+  
 
 ## Map
 
